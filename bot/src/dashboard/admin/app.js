@@ -586,16 +586,20 @@ function loadOrganizations() {
                     </span>
                 </td>
                 <td class="text-end">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-primary" onclick="viewOrganization(${org.id})">
-                            <i class="bi bi-eye"></i>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Acciones para organización ${org.name}">
+                        <button type="button" class="btn btn-outline-primary" onclick="viewOrganization(${org.id})" aria-label="Ver detalles de ${org.name}">
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                            <span class="visually-hidden">Ver detalles</span>
                         </button>
-                        <button type="button" class="btn btn-outline-primary" onclick="editOrganization(${org.id})">
-                            <i class="bi bi-pencil"></i>
+                        <button type="button" class="btn btn-outline-primary" onclick="editOrganization(${org.id})" aria-label="Editar ${org.name}">
+                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                            <span class="visually-hidden">Editar</span>
                         </button>
                         <button type="button" class="btn ${org.active ? 'btn-outline-danger' : 'btn-outline-success'}" 
-                                onclick="toggleOrganizationStatus(${org.id}, ${!org.active})">
-                            <i class="bi ${org.active ? 'bi-toggle-on' : 'bi-toggle-off'}"></i>
+                                onclick="toggleOrganizationStatus(${org.id}, ${!org.active})"
+                                aria-label="${org.active ? 'Desactivar' : 'Activar'} ${org.name}">
+                            <i class="bi ${org.active ? 'bi-toggle-on' : 'bi-toggle-off'}" aria-hidden="true"></i>
+                            <span class="visually-hidden">${org.active ? 'Desactivar' : 'Activar'}</span>
                         </button>
                     </div>
                 </td>
@@ -3186,20 +3190,23 @@ function loadNotificationsData() {
           scheduledDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
         row.innerHTML = `
-          <td>${notification.id}</td>
-          <td>${notification.event_name || 'N/A'}</td>
-          <td>${typeText}</td>
-          <td>${formattedDate}</td>
-          <td><span class="${statusClass}">${statusText}</span></td>
-          <td>
-            <button class="btn btn-sm btn-info view-notification-stats" data-id="${notification.id}" title="Ver estadísticas">
-              <i class="bi bi-bar-chart"></i>
+          <td headers="notif-col-id">${notification.id}</td>
+          <td headers="notif-col-event">${notification.event_name || 'N/A'}</td>
+          <td headers="notif-col-type">${typeText}</td>
+          <td headers="notif-col-scheduled">${formattedDate}</td>
+          <td headers="notif-col-status"><span class="${statusClass}">${statusText}</span></td>
+          <td headers="notif-col-actions">
+            <button class="btn btn-sm btn-info view-notification-stats" data-id="${notification.id}" title="Ver estadísticas" aria-label="Ver estadísticas de notificación #${notification.id}">
+              <i class="bi bi-bar-chart" aria-hidden="true"></i>
+              <span class="visually-hidden">Ver estadísticas</span>
             </button>
-            <button class="btn btn-sm btn-primary edit-notification" data-id="${notification.id}" title="Editar">
-              <i class="bi bi-pencil"></i>
+            <button class="btn btn-sm btn-primary edit-notification" data-id="${notification.id}" title="Editar" aria-label="Editar notificación #${notification.id}">
+              <i class="bi bi-pencil" aria-hidden="true"></i>
+              <span class="visually-hidden">Editar</span>
             </button>
-            <button class="btn btn-sm btn-danger delete-notification" data-id="${notification.id}" title="Eliminar">
-              <i class="bi bi-trash"></i>
+            <button class="btn btn-sm btn-danger delete-notification" data-id="${notification.id}" title="Eliminar" aria-label="Eliminar notificación #${notification.id}">
+              <i class="bi bi-trash" aria-hidden="true"></i>
+              <span class="visually-hidden">Eliminar</span>
             </button>
           </td>
         `;
