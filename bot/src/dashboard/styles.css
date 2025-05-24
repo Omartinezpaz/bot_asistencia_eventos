@@ -1,0 +1,134 @@
+/* Estilos generales */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+    border: none;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+    font-weight: 600;
+}
+
+/* Estilos para los indicadores de estadísticas */
+.card h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+}
+
+/* Estilos para tablas */
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Estilos para gráficos */
+canvas {
+    max-height: 300px;
+}
+
+/* Estilos para filtros y controles */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+}
+
+/* Estilos para paginación */
+.pagination .page-link {
+    color: #0d6efd;
+}
+
+.pagination .active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* Estilos para modales */
+.modal-header {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* Animaciones */
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+/* Estilos para alertas */
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffecb5;
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c2c7;
+}
+
+/* Estilos para estados de notificaciones */
+.badge-sent {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.badge-read {
+    background-color: #198754;
+    color: white;
+}
+
+.badge-responded {
+    background-color: #6f42c1;
+    color: white;
+}
+
+.badge-error {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 768px) {
+    .card h2 {
+        font-size: 1.8rem;
+    }
+    
+    .container-fluid {
+        padding: 0.5rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+} 

@@ -1,0 +1,1402 @@
+const { CentroVotacion, RegistroElectoral, Geografia, Participante, Evento, Asistencia } = require('./database');
+const { Op } = require('sequelize');
+const { procesarCentrosPorAPI } = require('./geocoder');
+const path = require('path');
+const express = require('express');
+const adminApiRouter = require('./dashboard/api');
+const { initializeDatabase } = require('./dashboard/api/db-init');
+const logger = require('./utils/logger');
+
+// Middleware para autenticación básica (solo para demostración)
+function basicAuth(req, res, next) {
+  // Verificar el encabezado de autorización
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Autorización requerida' });
+  }
+  
+  // Extraer las credenciales
+  const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+  const user = auth[0];
+  const pass = auth[1];
+  
+  // Verificar las credenciales (esto debería ser más seguro en producción)
+  if (user === 'admin' && pass === 'admin123') {
+    next();
+  } else {
+    res.status(401).json({ error: 'Credenciales inválidas' });
+  }
+}
+
+// Función para configurar las rutas de la API
+const setupRoutes = (app, bot, notificationService, notificationScheduler) => {
+  // Inicializar la base de datos para el panel de administración
+  initializeDatabase().then(success => {
+    if (success) {
+      console.log('Base de datos del panel de administración inicializada correctamente');
+    } else {
+      console.error('Error al inicializar la base de datos del panel de administración');
+    }
+  });
+
+  // Ruta principal
+  app.get('/', (req, res) => {
+    res.sendFile('index.html', { root: 'public' });
+  });
+  
+  // Ruta para la página de verificación
+  app.get('/verificar', (req, res) => {
+    res.sendFile('verificar.html', { root: 'public' });
+  });
+
+  // Panel de administración
+  app.get('/admin', (req, res) => {
+    res.sendFile('index.html', { root: path.join(__dirname, 'dashboard/admin') });
+  });
+
+  app.get('/admin/login', (req, res) => {
+    res.sendFile('login.html', { root: path.join(__dirname, 'dashboard/admin') });
+  });
+
+  // Servir archivos estáticos del panel de administración
+  app.use('/admin', express.static(path.join(__dirname, 'dashboard/admin')));
+
+  // Integrar rutas de la API del panel de administración
+  app.use('/api', adminApiRouter);
+  
+  // Endpoints de configuración directamente en routes.js
+  app.get('/api/config/admins', async (req, res) => {
+    try {
+      const { AppSettings } = require('./database');
+      
+      // Verificar si existen configuraciones para admins
+      const count = await AppSettings.count({ where: { category: 'admins' } });
+      
+      // Si no existen, crear algunas configuraciones por defecto
+      if (count === 0) {
+        await AppSettings.bulkCreate([
+          {
+            key: 'allow_register',
+            value: 'true',
+            category: 'admins',
+            description: 'Permitir registro de nuevos administradores',
+            data_type: 'boolean',
+            is_public: false
+          },
+          {
+            key: 'admin_approval',
+            value: 'true',
+            category: 'admins',
+            description: 'Requerir aprobación de administrador existente',
+            data_type: 'boolean',
+            is_public: false
+          },
+          {
+            key: 'session_timeout',
+            value: '60',
+            category: 'admins',
+            description: 'Tiempo de expiración de sesión en minutos',
+            data_type: 'number',
+            is_public: false
+          }
+        ]);
+      }
+      
+      const settings = await AppSettings.findAll({
+        where: { category: 'admins' },
+        order: [['key', 'ASC']]
+      });
+      
+      // Transformar a objeto
+      const result = {};
+      settings.forEach(setting => {
+        let value = setting.value;
+        try {
+          if (setting.data_type === 'boolean') {
+            value = value === 'true';
+          } else if (setting.data_type === 'number') {
+            value = parseFloat(value);
+          } else if (setting.data_type === 'json') {
+            value = JSON.parse(value);
+          }
+        } catch (error) {
+          console.error(`Error al convertir valor de ${setting.key}:`, error);
+        }
+        
+        result[setting.key] = value;
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error al obtener configuraciones de administradores:', error);
+      res.status(500).json({ error: 'Error al obtener configuraciones de administradores' });
+    }
+  });
+
+  app.get('/api/config/backups', async (req, res) => {
+    try {
+      const { AppSettings } = require('./database');
+      
+      // Verificar si existen configuraciones para backups
+      const count = await AppSettings.count({ where: { category: 'backups' } });
+      
+      // Si no existen, crear algunas configuraciones por defecto
+      if (count === 0) {
+        await AppSettings.bulkCreate([
+          {
+            key: 'backup_enabled',
+            value: 'true',
+            category: 'backups',
+            description: 'Habilitar respaldos automáticos',
+            data_type: 'boolean',
+            is_public: false
+          },
+          {
+            key: 'backup_frequency',
+            value: '7',
+            category: 'backups',
+            description: 'Frecuencia de respaldos en días',
+            data_type: 'number',
+            is_public: false
+          },
+          {
+            key: 'backup_retention',
+            value: '30',
+            category: 'backups',
+            description: 'Días de retención de respaldos',
+            data_type: 'number',
+            is_public: false
+          }
+        ]);
+      }
+      
+      const settings = await AppSettings.findAll({
+        where: { category: 'backups' },
+        order: [['key', 'ASC']]
+      });
+      
+      // Transformar a objeto
+      const result = {};
+      settings.forEach(setting => {
+        let value = setting.value;
+        try {
+          if (setting.data_type === 'boolean') {
+            value = value === 'true';
+          } else if (setting.data_type === 'number') {
+            value = parseFloat(value);
+          } else if (setting.data_type === 'json') {
+            value = JSON.parse(value);
+          }
+        } catch (error) {
+          console.error(`Error al convertir valor de ${setting.key}:`, error);
+        }
+        
+        result[setting.key] = value;
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error al obtener configuraciones de respaldos:', error);
+      res.status(500).json({ error: 'Error al obtener configuraciones de respaldos' });
+    }
+  });
+
+  // Registrar un middleware para depurar rutas
+  app.use('/api', (req, res, next) => {
+    console.log(`🔍 [DEBUG] Ruta API solicitada: ${req.method} ${req.originalUrl}`);
+    next();
+  });
+  
+  // Ruta específica para el login (duplicada para asegurar que funcione)
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      // Verificar que se proporcionaron credenciales
+      if (!username || !password) {
+        return res.status(400).json({ error: 'Se requieren usuario y contraseña' });
+      }
+      
+      // Buscar usuario en la base de datos
+      const user = await Participante.findOne({ 
+        where: { 
+          [Op.or]: [
+            { username: username },
+            { telegramId: username }
+          ]
+        } 
+      });
+      
+      // Si no existe el usuario o la contraseña es incorrecta
+      if (!user) {
+        return res.status(401).json({ error: 'Credenciales inválidas' });
+      }
+      
+      // Para este ejemplo, usamos una verificación simple
+      if (password !== process.env.ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Credenciales inválidas' });
+      }
+      
+      // Generar token JWT
+      const jwt = require('jsonwebtoken');
+      const JWT_SECRET = process.env.JWT_SECRET || 'secreto-temporal-cambiar-en-produccion';
+      
+      const token = jwt.sign(
+        { 
+          id: user.id, 
+          username: user.username || user.telegramId,
+          role: user.rol
+        }, 
+        JWT_SECRET, 
+        { expiresIn: '24h' }
+      );
+      
+      // Responder con el token y datos básicos del usuario
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          username: user.username || user.telegramId,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.rol
+        }
+      });
+    } catch (error) {
+      console.error('Error en login:', error);
+      res.status(500).json({ error: 'Error en el servidor' });
+    }
+  });
+  
+  // API para buscar registro electoral por cédula
+  app.get('/api/registro/:cedula', async (req, res) => {
+    try {
+      const cedula = req.params.cedula;
+      
+      if (!cedula) {
+        return res.status(400).json({ error: 'Se requiere número de cédula' });
+      }
+      
+      // Buscar en el registro electoral
+      const registro = await RegistroElectoral.findOne({
+        where: { cedula: cedula },
+        include: [{
+          model: CentroVotacion,
+          required: false
+        }]
+      });
+      
+      if (!registro) {
+        return res.status(404).json({ error: 'No se encontró registro electoral para esta cédula' });
+      }
+      
+      // Buscar ubicación geográfica
+      const geografia = await Geografia.findOne({
+        where: {
+          cod_estado: registro.cod_estado,
+          cod_municipio: registro.cod_municipio,
+          cod_parroquia: registro.cod_parroquia
+        }
+      });
+      
+      // Formatear nombre completo
+      const nombreCompleto = `${registro.p_nombre || ''} ${registro.s_nombre || ''}`.trim();
+      const apellidoCompleto = `${registro.p_apellido || ''} ${registro.s_apellido || ''}`.trim();
+      
+      // Obtener información del centro de votación
+      let centroVotacion = null;
+      if (registro.CentroVotacion) {
+        centroVotacion = {
+          codigo: registro.cod_centrov,
+          nombre: registro.CentroVotacion.nom_centro,
+          direccion: registro.CentroVotacion.direccion
+        };
+      }
+      
+      // Enviar respuesta
+      res.json({
+        cedula: registro.cedula,
+        nacionalidad: registro.nac,
+        nombre: nombreCompleto,
+        apellido: apellidoCompleto,
+        sexo: registro.sexo,
+        fecha_nacimiento: registro.fecha_nac,
+        ubicacion: geografia ? {
+          estado: geografia.nom_estado,
+          municipio: geografia.nom_municipio,
+          parroquia: geografia.nom_parroquia
+        } : null,
+        centro_votacion: centroVotacion
+      });
+    } catch (error) {
+      console.error('Error al buscar registro electoral:', error);
+      res.status(500).json({ error: 'Error al buscar registro electoral' });
+    }
+  });
+  
+  // API para buscar centro de votación por código
+  app.get('/api/centro/:codigo', async (req, res) => {
+    try {
+      const codigo = req.params.codigo;
+      
+      if (!codigo) {
+        return res.status(400).json({ error: 'Se requiere código de centro de votación' });
+      }
+      
+      // Buscar centro de votación
+      const centro = await CentroVotacion.findOne({
+        where: { cod_centro: codigo }
+      });
+      
+      if (!centro) {
+        return res.status(404).json({ error: 'Centro de votación no encontrado' });
+      }
+      
+      // Buscar información geográfica
+      const geografia = await Geografia.findOne({
+        where: {
+          cod_estado: centro.cod_estado,
+          cod_municipio: centro.cod_municipio,
+          cod_parroquia: centro.cod_parroquia
+        }
+      });
+      
+      // Enviar respuesta
+      res.json({
+        codigo: centro.cod_centro,
+        nombre: centro.nom_centro,
+        direccion: centro.direccion,
+        ubicacion: geografia ? {
+          estado: geografia.nom_estado,
+          municipio: geografia.nom_municipio,
+          parroquia: geografia.nom_parroquia
+        } : null
+      });
+    } catch (error) {
+      console.error('Error al buscar centro de votación:', error);
+      res.status(500).json({ error: 'Error al buscar centro de votación' });
+    }
+  });
+  
+  // API para verificar cédula y clave (para el proceso de autenticación del bot)
+  app.post('/api/verificar', async (req, res) => {
+    try {
+      const { cedula, evento_id } = req.body;
+      
+      if (!cedula) {
+        return res.status(400).json({ error: 'El campo cédula es obligatorio' });
+      }
+      
+      // Buscar en el registro electoral
+      const registro = await RegistroElectoral.findOne({
+        where: { cedula: cedula },
+        include: [{
+          model: CentroVotacion,
+          required: false
+        }]
+      });
+      
+      if (!registro) {
+        return res.status(404).json({ error: 'No se encontró registro electoral para esta cédula' });
+      }
+      
+      // Buscar ubicación geográfica
+      const geografia = await Geografia.findOne({
+        where: {
+          cod_estado: registro.cod_estado,
+          cod_municipio: registro.cod_municipio,
+          cod_parroquia: registro.cod_parroquia
+        }
+      });
+      
+      // Formatear nombre completo
+      const nombreCompleto = `${registro.p_nombre || ''} ${registro.s_nombre || ''}`.trim();
+      const apellidoCompleto = `${registro.p_apellido || ''} ${registro.s_apellido || ''}`.trim();
+      
+      // Buscar o crear un participante
+      const [participante, created] = await Participante.findOrCreate({
+        where: { cedula: cedula.toString() },
+        defaults: {
+          nac: registro.nac || 'V',
+          firstName: nombreCompleto,
+          lastName: apellidoCompleto,
+          telegramId: req.body.telegramId || ''
+        }
+      });
+      
+      // Determinar si se especificó un evento o usar el evento activo por defecto
+      let eventoActual = null;
+      if (evento_id) {
+        eventoActual = await Evento.findByPk(evento_id);
+      } else {
+        eventoActual = await Evento.findOne({ where: { active: true } });
+      }
+      
+      // Obtener todas las asistencias del participante
+      const asistencias = await Asistencia.findAll({
+        where: { ParticipantId: participante.id },
+        include: [{
+          model: Evento,
+          attributes: ['id', 'name', 'date', 'location']
+        }]
+      });
+      
+      // Verificar si ya asistió al evento actual
+      let asistenciaEventoActual = false;
+      let detalleAsistenciaEventoActual = null;
+      
+      if (eventoActual) {
+        const asistenciaAlEventoActual = asistencias.find(a => a.eventid === eventoActual.id);
+        asistenciaEventoActual = !!asistenciaAlEventoActual;
+        
+        if (asistenciaAlEventoActual) {
+          detalleAsistenciaEventoActual = {
+            id: asistenciaAlEventoActual.id,
+            fecha: asistenciaAlEventoActual.registeredAt,
+            status: asistenciaAlEventoActual.status,
+            evento: {
+              id: eventoActual.id,
+              nombre: eventoActual.name,
+              fecha: eventoActual.date,
+              lugar: eventoActual.location
+            }
+          };
+        }
+      }
+      
+      // Transformar asistencias para la respuesta
+      const historialAsistencias = asistencias.map(asistencia => ({
+        id: asistencia.id,
+        eventoId: asistencia.eventid,
+        eventoNombre: asistencia.Evento ? asistencia.Evento.name : 'Evento desconocido',
+        fecha: asistencia.registeredAt,
+        status: asistencia.status
+      }));
+      
+      // Enviar respuesta
+      res.json({
+        votante: {
+          id: participante.id,
+          cedula: participante.cedula,
+          nombre: participante.firstName,
+          apellido: participante.lastName,
+          asistencia: asistencias.length > 0,
+          asistenciaEventoActual: asistenciaEventoActual,
+          detalleAsistenciaEventoActual: detalleAsistenciaEventoActual,
+          historialAsistencias: historialAsistencias
+        },
+        eventoActual: eventoActual ? {
+          id: eventoActual.id,
+          nombre: eventoActual.name,
+          fecha: eventoActual.date,
+          lugar: eventoActual.location
+        } : null,
+        centroVotacion: registro.CentroVotacion ? {
+          id: registro.CentroVotacion.cod_centro,
+          nombre: registro.CentroVotacion.nom_centro,
+          direccion: registro.CentroVotacion.direccion,
+          municipio: geografia ? geografia.nom_municipio : '',
+          estado: geografia ? geografia.nom_estado : '',
+          codigo: registro.cod_centrov
+        } : null
+      });
+    } catch (error) {
+      console.error('Error al verificar credenciales:', error);
+      res.status(500).json({ error: 'Error al verificar credenciales', details: error.message });
+    }
+  });
+  
+  // API para reportar asistencia
+  app.post('/api/asistencia', async (req, res) => {
+    try {
+      const { cedula, evento_id, method = 'telegram', location = null, notes = null } = req.body;
+      
+      if (!cedula) {
+        return res.status(400).json({ error: 'El campo cédula es obligatorio' });
+      }
+      
+      // Buscar participante por cédula
+      const participante = await Participante.findOne({ where: { cedula } });
+      
+      if (!participante) {
+        return res.status(404).json({ error: 'Participante no encontrado', message: 'No se encontró ningún participante con esa cédula en la base de datos.' });
+      }
+      
+      // Determinar el evento (usar el primero disponible si no se especifica)
+      let eventoId = evento_id;
+      let eventoInfo = null;
+      
+      if (!eventoId) {
+        const evento = await Evento.findOne({ 
+          where: { active: true },
+          order: [['date', 'ASC']]
+        });
+        
+        if (evento) {
+          eventoId = evento.id;
+          eventoInfo = {
+            id: evento.id,
+            nombre: evento.name,
+            fecha: evento.date,
+            lugar: evento.location
+          };
+        } else {
+          return res.status(404).json({ 
+            error: 'No hay eventos activos disponibles',
+            message: 'No se encontraron eventos activos para registrar asistencia.'
+          });
+        }
+      } else {
+        // Buscar información del evento especificado
+        const evento = await Evento.findByPk(eventoId);
+        if (!evento) {
+          return res.status(404).json({ 
+            error: 'Evento no encontrado',
+            message: 'El evento especificado no existe en la base de datos.'
+          });
+        }
+        
+        if (!evento.active) {
+          return res.status(400).json({ 
+            error: 'Evento inactivo',
+            message: 'El evento especificado no está activo actualmente.'
+          });
+        }
+        
+        eventoInfo = {
+          id: evento.id,
+          nombre: evento.name,
+          fecha: evento.date,
+          lugar: evento.location
+        };
+      }
+      
+      // Verificar si ya existe una asistencia para este participante y evento
+      const asistenciaExistente = await Asistencia.findOne({
+        where: {
+          participantid: participante.id,
+          eventid: eventoId
+        }
+      });
+      
+      if (asistenciaExistente) {
+        // Actualizar la fecha de registro si es necesario
+        if (asistenciaExistente.method !== method || 
+            asistenciaExistente.location !== location || 
+            asistenciaExistente.notes !== notes) {
+          
+          asistenciaExistente.method = method;
+          asistenciaExistente.location = location;
+          asistenciaExistente.notes = notes;
+          asistenciaExistente.updatedAt = new Date();
+          await asistenciaExistente.save();
+          
+          return res.json({
+            success: true,
+            message: 'La asistencia ya estaba registrada, se actualizó la información adicional',
+            asistencia: {
+              id: asistenciaExistente.id,
+              participanteId: participante.id,
+              participanteNombre: `${participante.firstName} ${participante.lastName}`.trim(),
+              participanteCedula: participante.cedula,
+              eventoId: eventoId,
+              eventoInfo: eventoInfo,
+              fechaRegistro: asistenciaExistente.registeredAt,
+              method: asistenciaExistente.method,
+              location: asistenciaExistente.location,
+              notes: asistenciaExistente.notes,
+              status: asistenciaExistente.status,
+              actualizado: true,
+              yaRegistrado: true
+            }
+          });
+        }
+        
+        return res.json({
+          success: true,
+          message: 'La asistencia ya estaba registrada',
+          asistencia: {
+            id: asistenciaExistente.id,
+            participanteId: participante.id,
+            participanteNombre: `${participante.firstName} ${participante.lastName}`.trim(),
+            participanteCedula: participante.cedula,
+            eventoId: eventoId,
+            eventoInfo: eventoInfo,
+            fechaRegistro: asistenciaExistente.registeredAt,
+            method: asistenciaExistente.method,
+            location: asistenciaExistente.location,
+            notes: asistenciaExistente.notes,
+            status: asistenciaExistente.status,
+            yaRegistrado: true
+          }
+        });
+      }
+      
+      // Fecha actual para registro
+      const ahora = new Date();
+      
+      // Registrar asistencia
+      const asistencia = await Asistencia.create({
+        participantid: participante.id,
+        eventid: eventoId,
+        status: 'asistió',
+        method: method,
+        location: location,
+        notes: notes,
+        registeredAt: ahora,
+        createdAt: ahora,
+        updatedAt: ahora
+      });
+      
+      res.json({
+        success: true,
+        message: 'Asistencia registrada correctamente',
+        asistencia: {
+          id: asistencia.id,
+          participanteId: participante.id,
+          participanteNombre: `${participante.firstName} ${participante.lastName}`.trim(),
+          participanteCedula: participante.cedula,
+          eventoId: eventoId,
+          eventoInfo: eventoInfo,
+          fechaRegistro: asistencia.registeredAt,
+          method: asistencia.method,
+          location: asistencia.location,
+          notes: asistencia.notes,
+          status: asistencia.status,
+          nuevoRegistro: true
+        }
+      });
+    } catch (error) {
+      console.error('Error al registrar asistencia:', error);
+      res.status(500).json({ 
+        error: 'Error al registrar asistencia', 
+        message: 'Ocurrió un error interno al intentar registrar la asistencia.',
+        details: error.message 
+      });
+    }
+  });
+  
+  // API para geocodificar centros de votación (protegida)
+  app.post('/api/geocodificar', basicAuth, async (req, res) => {
+    try {
+      const { limite } = req.body;
+      
+      // Validar límite
+      const limiteNum = parseInt(limite) || 5;
+      
+      // Iniciar proceso de geocodificación
+      const resultado = await procesarCentrosPorAPI(limiteNum);
+      
+      res.json({
+        success: true,
+        message: `Proceso de geocodificación completado para ${resultado.actualizados} centros de ${resultado.total} procesados.`,
+        resultado
+      });
+    } catch (error) {
+      console.error('Error en API de geocodificación:', error);
+      res.status(500).json({ error: 'Error en el proceso de geocodificación' });
+    }
+  });
+  
+  // API para obtener todos los centros de votación de un municipio
+  app.get('/api/centros/municipio/:cod_municipio', async (req, res) => {
+    try {
+      const { cod_municipio } = req.params;
+      
+      if (!cod_municipio) {
+        return res.status(400).json({ error: 'Se requiere código de municipio' });
+      }
+      
+      const centros = await CentroVotacion.findAll({
+        where: { cod_municipio }
+      });
+      
+      res.json(centros);
+    } catch (error) {
+      console.error('Error al obtener centros de votación:', error);
+      res.status(500).json({ error: 'Error al obtener centros de votación' });
+    }
+  });
+  
+  // API para obtener estadísticas de asistencia (protegida con autenticación básica)
+  app.get('/api/estadisticas', basicAuth, async (req, res) => {
+    try {
+      // Obtener total de votantes
+      const totalVotantes = await Participante.count();
+      
+      // Obtener total de asistencias
+      const totalAsistencias = await Asistencia.count();
+      
+      // Obtener estadísticas por evento
+      const eventos = await Evento.findAll({
+        include: [{
+          model: Participante,
+          through: {
+            model: Asistencia,
+            attributes: ['status']
+          }
+        }]
+      });
+      
+      const estadisticasPorEvento = eventos.map(evento => {
+        const participantes = evento.Participantes || [];
+        const totalParticipantes = participantes.length;
+        
+        return {
+          id: evento.id,
+          nombre: evento.name,
+          fecha: evento.date,
+          totalParticipantes,
+          porcentaje: totalVotantes > 0 ? (totalParticipantes / totalVotantes * 100).toFixed(2) : 0
+        };
+      });
+      
+      // Enviar respuesta
+      res.json({
+        totalVotantes,
+        totalAsistencias,
+        porcentajeTotal: totalVotantes > 0 ? (totalAsistencias / totalVotantes * 100).toFixed(2) : 0,
+        estadisticasPorEvento
+      });
+    } catch (error) {
+      console.error('Error al obtener estadísticas:', error);
+      res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
+  });
+  
+  // API para crear un participante (protegida con autenticación básica)
+  app.post('/api/participantes', basicAuth, async (req, res) => {
+    try {
+      const { cedula, nac, firstName, lastName, telegramId, phone, email } = req.body;
+      
+      if (!cedula || !nac) {
+        return res.status(400).json({ error: 'Los campos cedula y nac son obligatorios' });
+      }
+      
+      // Crear el participante
+      const participante = await Participante.create({
+        cedula,
+        nac,
+        firstName,
+        lastName,
+        telegramId,
+        phone,
+        email
+      });
+      
+      res.status(201).json(participante);
+    } catch (error) {
+      console.error('Error al crear participante:', error);
+      
+      // Verificar si es un error de duplicado (cédula única)
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        return res.status(400).json({ error: 'Ya existe un participante con esa cédula o telegramId' });
+      }
+      
+      res.status(500).json({ error: 'Error al crear participante' });
+    }
+  });
+  
+  // API para obtener todos los eventos disponibles
+  app.get('/api/eventos', async (req, res) => {
+    try {
+      const eventos = await Evento.findAll({
+        order: [['date', 'ASC']]
+      });
+      
+      res.json(eventos);
+    } catch (error) {
+      console.error('Error al obtener eventos:', error);
+      res.status(500).json({ error: 'Error al obtener eventos' });
+    }
+  });
+  
+  // API para geocodificar un centro específico
+  app.get('/api/geocodificar/:codigo', basicAuth, async (req, res) => {
+    try {
+      const codigo = req.params.codigo;
+      
+      if (!codigo) {
+        return res.status(400).json({ error: 'Se requiere código de centro de votación' });
+      }
+      
+      // Buscar centro de votación
+      const centro = await CentroVotacion.findOne({
+        where: { cod_centro: codigo }
+      });
+      
+      if (!centro) {
+        return res.status(404).json({ error: 'Centro de votación no encontrado' });
+      }
+      
+      // Importar la función directamente para evitar circular dependencies
+      const { actualizarCoordenadasCentro } = require('./geocoder');
+      
+      // Actualizar coordenadas
+      const resultado = await actualizarCoordenadasCentro(centro.id);
+      
+      if (resultado) {
+        // Obtener el centro actualizado
+        const centroActualizado = await CentroVotacion.findByPk(centro.id);
+        
+        return res.json({
+          success: true,
+          message: 'Coordenadas actualizadas correctamente',
+          data: {
+            codigo: centroActualizado.cod_centro,
+            nombre: centroActualizado.nom_centro,
+            latitud: centroActualizado.latitud,
+            longitud: centroActualizado.longitud
+          }
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: 'No se pudieron obtener coordenadas para este centro'
+        });
+      }
+    } catch (error) {
+      console.error('Error al geocodificar centro:', error);
+      res.status(500).json({ error: 'Error al geocodificar centro' });
+    }
+  });
+  
+  // API para consultar estado de asistencia por cédula y evento
+  app.get('/api/asistencia/verificar', async (req, res) => {
+    try {
+      const { cedula, evento_id } = req.query;
+      
+      if (!cedula) {
+        return res.status(400).json({ error: 'El parámetro cedula es obligatorio' });
+      }
+      
+      // Buscar participante
+      const participante = await Participante.findOne({ where: { cedula } });
+      
+      if (!participante) {
+        return res.status(404).json({ 
+          error: 'Participante no encontrado', 
+          message: 'No existe un participante registrado con esa cédula',
+          asistencia: false,
+          cedula
+        });
+      }
+      
+      // Determinar el evento
+      let eventoId = evento_id;
+      let eventoInfo = null;
+      
+      if (!eventoId) {
+        // Usar el evento activo más próximo
+        const evento = await Evento.findOne({ 
+          where: { active: true },
+          order: [['date', 'ASC']]
+        });
+        
+        if (!evento) {
+          return res.json({
+            participante: {
+              id: participante.id,
+              cedula: participante.cedula,
+              nombre: `${participante.firstName} ${participante.lastName}`.trim()
+            },
+            asistencia: false,
+            mensaje: 'No hay eventos activos disponibles para verificar asistencia',
+            eventos: []
+          });
+        }
+        
+        eventoId = evento.id;
+        eventoInfo = {
+          id: evento.id,
+          nombre: evento.name,
+          fecha: evento.date,
+          lugar: evento.location
+        };
+      } else {
+        // Buscar información del evento especificado
+        const evento = await Evento.findByPk(eventoId);
+        if (!evento) {
+          return res.status(404).json({ 
+            error: 'Evento no encontrado',
+            message: 'El evento especificado no existe en la base de datos.'
+          });
+        }
+        
+        eventoInfo = {
+          id: evento.id,
+          nombre: evento.name,
+          fecha: evento.date,
+          lugar: evento.location,
+          activo: evento.active
+        };
+      }
+      
+      // Obtener asistencia al evento especificado
+      const asistencia = await Asistencia.findOne({
+        where: {
+          participantid: participante.id,
+          eventid: eventoId
+        }
+      });
+      
+      // Obtener todas las asistencias del participante para historial
+      const todasAsistencias = await Asistencia.findAll({
+        where: { participantid: participante.id },
+        include: [{
+          model: Evento,
+          attributes: ['id', 'name', 'date', 'location']
+        }]
+      });
+      
+      // Formatear todas las asistencias para el historial
+      const historialAsistencias = todasAsistencias.map(a => ({
+        id: a.id,
+        eventoId: a.eventid,
+        eventoNombre: a.Evento ? a.Evento.name : 'Evento desconocido',
+        fecha: a.registeredAt,
+        method: a.method || 'manual',
+        status: a.status
+      }));
+      
+      // Respuesta
+      if (asistencia) {
+        // El participante ya asistió al evento
+        return res.json({
+          participante: {
+            id: participante.id,
+            cedula: participante.cedula,
+            nombre: `${participante.firstName} ${participante.lastName}`.trim()
+          },
+          evento: eventoInfo,
+          asistencia: true,
+          detalleAsistencia: {
+            id: asistencia.id,
+            fechaRegistro: asistencia.registeredAt,
+            method: asistencia.method || 'manual',
+            location: asistencia.location,
+            status: asistencia.status
+          },
+          mensaje: `${participante.firstName} ya registró su asistencia al evento ${eventoInfo.nombre}`,
+          historialAsistencias
+        });
+      } else {
+        // El participante no ha asistido al evento
+        return res.json({
+          participante: {
+            id: participante.id,
+            cedula: participante.cedula,
+            nombre: `${participante.firstName} ${participante.lastName}`.trim()
+          },
+          evento: eventoInfo,
+          asistencia: false,
+          mensaje: `${participante.firstName} aún no ha registrado asistencia al evento ${eventoInfo.nombre}`,
+          historialAsistencias
+        });
+      }
+    } catch (error) {
+      console.error('Error al verificar asistencia:', error);
+      res.status(500).json({ 
+        error: 'Error al verificar asistencia', 
+        message: 'Ocurrió un error al verificar el estado de asistencia',
+        details: error.message 
+      });
+    }
+  });
+  
+  // Endpoint para obtener configuraciones de backups directamente en routes.js
+  app.get('/api/settings/backups', async (req, res) => {
+    try {
+      const { AppSettings } = require('./database');
+      
+      console.log('🔍 [DEBUG] Recibida solicitud a /api/settings/backups en routes.js');
+      
+      const settings = await AppSettings.findAll({
+        where: { category: 'backups' },
+        order: [['key', 'ASC']]
+      });
+      
+      // Transformar a objeto
+      const result = {};
+      settings.forEach(setting => {
+        let value = setting.value;
+        try {
+          if (setting.data_type === 'boolean') {
+            value = value === 'true';
+          } else if (setting.data_type === 'number') {
+            value = parseFloat(value);
+          } else if (setting.data_type === 'json') {
+            value = JSON.parse(value);
+          }
+        } catch (error) {
+          console.error(`Error al convertir valor de ${setting.key}:`, error);
+        }
+        
+        result[setting.key] = value;
+      });
+      
+      console.log('🔍 [DEBUG] Enviando respuesta para /api/settings/backups');
+      res.json(result);
+    } catch (error) {
+      console.error('Error al obtener configuraciones de respaldos:', error);
+      res.status(500).json({ error: 'Error al obtener configuraciones de respaldos' });
+    }
+  });
+
+  // Endpoint para obtener todas las configuraciones directamente en routes.js
+  app.get('/api/settings/all', async (req, res) => {
+    try {
+      const { AppSettings } = require('./database');
+      
+      console.log('🔍 [DEBUG] Recibida solicitud a /api/settings/all en routes.js');
+      
+      const settings = await AppSettings.findAll({
+        order: [['category', 'ASC'], ['key', 'ASC']]
+      });
+      
+      console.log(`🔍 [DEBUG] Encontradas ${settings.length} configuraciones`);
+      
+      // Transformar a objeto agrupado por categoría
+      const result = {};
+      settings.forEach(setting => {
+        let value = setting.value;
+        try {
+          if (setting.data_type === 'boolean') {
+            value = value === 'true';
+          } else if (setting.data_type === 'number') {
+            value = parseFloat(value);
+          } else if (setting.data_type === 'json') {
+            value = JSON.parse(value);
+          }
+        } catch (error) {
+          console.error(`Error al convertir valor de ${setting.key}:`, error);
+        }
+        
+        // Crear la categoría si no existe
+        if (!result[setting.category]) {
+          result[setting.category] = {};
+        }
+        
+        // Agregar la configuración a la categoría
+        result[setting.category][setting.key] = value;
+      });
+      
+      console.log('🔍 [DEBUG] Enviando respuesta para /api/settings/all');
+      res.json(result);
+    } catch (error) {
+      console.error('Error al obtener todas las configuraciones:', error);
+      res.status(500).json({ error: 'Error al obtener todas las configuraciones' });
+    }
+  });
+
+  // Endpoint para obtener configuraciones de admins directamente en routes.js
+  app.get('/api/settings/admins', async (req, res) => {
+    try {
+      const { AppSettings } = require('./database');
+      
+      console.log('🔍 [DEBUG] Recibida solicitud a /api/settings/admins en routes.js');
+      
+      const settings = await AppSettings.findAll({
+        where: { category: 'admins' },
+        order: [['key', 'ASC']]
+      });
+      
+      // Transformar a objeto
+      const result = {};
+      settings.forEach(setting => {
+        let value = setting.value;
+        try {
+          if (setting.data_type === 'boolean') {
+            value = value === 'true';
+          } else if (setting.data_type === 'number') {
+            value = parseFloat(value);
+          } else if (setting.data_type === 'json') {
+            value = JSON.parse(value);
+          }
+        } catch (error) {
+          console.error(`Error al convertir valor de ${setting.key}:`, error);
+        }
+        
+        result[setting.key] = value;
+      });
+      
+      console.log('🔍 [DEBUG] Enviando respuesta para /api/settings/admins');
+      res.json(result);
+    } catch (error) {
+      console.error('Error al obtener configuraciones de administradores:', error);
+      res.status(500).json({ error: 'Error al obtener configuraciones de administradores' });
+    }
+  });
+
+  // Endpoint para validar participantes (para pruebas sin autenticación)
+  app.post('/api/participants/validate-test', async (req, res) => {
+    try {
+        const { 
+            nac, 
+            cedula, 
+            firstName, 
+            lastName, 
+            telegramId, 
+            email, 
+            phone, 
+            photoUrl,
+            organizationId
+        } = req.body;
+        
+        const errors = [];
+        
+        // Validar datos obligatorios
+        if (!nac || !cedula || !firstName || !lastName) {
+            errors.push('Nac, cédula, nombre y apellido son obligatorios');
+        }
+        
+        // Validar cédula
+        if (nac && cedula) {
+            // Validar que la nacionalidad sea V o E
+            if (nac !== 'V' && nac !== 'E') {
+                errors.push('La nacionalidad debe ser V o E');
+            }
+            
+            // Validar que la cédula sea un número
+            if (!/^\d+$/.test(cedula)) {
+                errors.push('La cédula debe contener solo números');
+            }
+            
+            // Validar longitud entre 6 y 8 dígitos
+            if (cedula.length < 6 || cedula.length > 8) {
+                errors.push('La cédula debe tener entre 6 y 8 dígitos');
+            }
+        }
+        
+        // Validar que teléfono y correo sean obligatorios
+        if (!email) {
+            errors.push('El correo electrónico es obligatorio');
+        } else {
+            // Validar formato de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                errors.push('El formato del correo electrónico no es válido');
+            }
+        }
+        
+        if (!phone) {
+            errors.push('El número de teléfono es obligatorio');
+        } else {
+            // Validar formato de teléfono venezolano
+            const phoneRegex = /^(0414|0424|0412|0416|0426)[-\s]?[0-9]{3}[-\s]?[0-9]{4}$|^[0-9]{10,11}$/;
+            if (!phoneRegex.test(phone)) {
+                errors.push('El formato del número de teléfono no es válido. Debe ser un número venezolano (ej: 0414-123-4567)');
+            }
+        }
+        
+        if (errors.length > 0) {
+            return res.status(400).json({ 
+                valid: false,
+                errors 
+            });
+        }
+        
+        res.json({
+            valid: true,
+            data: {
+                nac,
+                cedula,
+                firstName,
+                lastName,
+                telegramId,
+                email,
+                phone,
+                photoUrl,
+                organizationId
+            }
+        });
+    } catch (error) {
+        console.error('Error al validar participante:', error);
+        res.status(500).json({ error: 'Error al validar participante', details: error.message });
+    }
+  });
+
+  // Endpoints de prueba sin autenticación (solo para desarrollo)
+  app.get('/api/events/test', async (req, res) => {
+    try {
+      const { sequelize } = require('./database');
+      
+      const query = `
+        SELECT 
+            e.id,
+            e.name,
+            e.description,
+            e.date,
+            e.location,
+            e.active as is_active,
+            o.name as organization_name,
+            o.id as organization_id,
+            (SELECT COUNT(*) FROM notif_eventos_bot.attendances a WHERE a.eventid = e.id) as attendance_count
+        FROM notif_eventos_bot.events e
+        LEFT JOIN notif_eventos_bot.organizations o ON e.organization_id = o.id
+        ORDER BY e.date DESC
+        LIMIT 10
+      `;
+      
+      const [events] = await sequelize.query(query);
+      
+      res.json(events);
+    } catch (error) {
+      console.error('Error al obtener eventos (test):', error);
+      res.status(500).json({ error: 'Error al obtener eventos' });
+    }
+  });
+  
+  app.post('/api/attendances/validate-participant-test', async (req, res) => {
+    try {
+      const { cedula, eventId, nac } = req.body;
+      const { sequelize, RegistroElectoral, CentroVotacion } = require('./database');
+      
+      // Validar datos obligatorios
+      if (!cedula) {
+        return res.status(400).json({ error: 'La cédula es obligatoria' });
+      }
+      
+      if (!eventId) {
+        return res.status(400).json({ error: 'El ID del evento es obligatorio' });
+      }
+      
+      // Buscar participante por cédula
+      const nacionalidad = nac || 'V'; // Valor por defecto
+      
+      const participantQuery = `
+        SELECT 
+            p.id, 
+            p.firstname, 
+            p.lastname, 
+            p.nac, 
+            p.cedula,
+            p.email,
+            p.phone,
+            o.name as organization_name
+        FROM notif_eventos_bot.participants p
+        LEFT JOIN notif_eventos_bot.organizations o ON p.organization_id = o.id
+        WHERE p.cedula = :cedula AND p.nac = :nacionalidad
+      `;
+      
+      const [participante] = await sequelize.query(participantQuery, { 
+        replacements: { cedula, nacionalidad },
+        plain: true
+      });
+      
+      // Verificar si ya existe una asistencia para este participante y evento
+      let asistenciaExistente = null;
+      
+      if (participante) {
+        const checkQuery = `
+            SELECT 
+                a.id, 
+                a.status, 
+                a.registeredat,
+                a.method
+            FROM notif_eventos_bot.attendances a
+            WHERE a.participantid = :participantId AND a.eventid = :eventId
+        `;
+        
+        [asistenciaExistente] = await sequelize.query(checkQuery, { 
+            replacements: { participantId: participante.id, eventId },
+            plain: true
+        });
+      }
+      
+      // Buscar en el registro electoral si no se encuentra participante
+      let registroElectoral = null;
+      let centroVotacion = null;
+      
+      if (!participante) {
+        try {
+          // Buscar en el registro electoral
+          registroElectoral = await RegistroElectoral.findOne({
+            where: { cedula, nac: nacionalidad },
+            include: [{
+              model: CentroVotacion,
+              required: false
+            }]
+          });
+          
+          if (registroElectoral && registroElectoral.CentroVotacion) {
+            centroVotacion = {
+              codigo: registroElectoral.cod_centrov,
+              nombre: registroElectoral.CentroVotacion.nom_centro,
+              direccion: registroElectoral.CentroVotacion.direccion
+            };
+          }
+        } catch (error) {
+          console.error('Error al buscar en registro electoral:', error);
+          // No detenemos el proceso si falla la búsqueda en registro electoral
+        }
+      }
+      
+      // Obtener información del evento
+      const eventQuery = `
+        SELECT 
+            e.id, 
+            e.name, 
+            e.date, 
+            e.location,
+            e.description
+        FROM notif_eventos_bot.events e
+        WHERE e.id = :eventId
+      `;
+      
+      const [evento] = await sequelize.query(eventQuery, { 
+        replacements: { eventId },
+        plain: true
+      });
+      
+      if (!evento) {
+        return res.status(404).json({ error: 'Evento no encontrado' });
+      }
+      
+      // Preparar respuesta
+      const response = {
+        participante: participante ? {
+          id: participante.id,
+          nombreCompleto: `${participante.firstname} ${participante.lastname}`,
+          documento: `${participante.nac}${participante.cedula}`,
+          organizacion: participante.organization_name,
+          email: participante.email,
+          phone: participante.phone,
+          faltanDatos: !participante.email || !participante.phone
+        } : null,
+        registroElectoral: registroElectoral ? {
+          nombreCompleto: `${registroElectoral.p_nombre || ''} ${registroElectoral.s_nombre || ''} ${registroElectoral.p_apellido || ''} ${registroElectoral.s_apellido || ''}`.replace(/\s+/g, ' ').trim(),
+          documento: `${registroElectoral.nac}${registroElectoral.cedula}`,
+          centroVotacion
+        } : null,
+        evento: {
+          id: evento.id,
+          nombre: evento.name,
+          fecha: evento.date,
+          ubicacion: evento.location,
+          descripcion: evento.description
+        },
+        asistencia: asistenciaExistente ? {
+          id: asistenciaExistente.id,
+          estado: asistenciaExistente.status,
+          fechaRegistro: asistenciaExistente.registeredat,
+          metodo: asistenciaExistente.method,
+          yaRegistrado: true
+        } : null,
+        puedeRegistrar: !!participante && !asistenciaExistente,
+        requiereCrearParticipante: !participante && !!registroElectoral,
+        noEncontrado: !participante && !registroElectoral
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error('Error al validar participante (test):', error);
+      res.status(500).json({ error: 'Error al validar participante', details: error.message });
+    }
+  });
+
+  console.log('Rutas configuradas correctamente');
+};
+
+module.exports = { setupRoutes }; 

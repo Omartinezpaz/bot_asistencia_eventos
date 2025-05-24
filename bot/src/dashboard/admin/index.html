@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Bot de Notificación de Eventos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h5 class="text-white">Panel de Administración</h5>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" id="dashboard-link">
+                                <i class="bi bi-speedometer2 me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="organizations-link">
+                                <i class="bi bi-building me-2"></i>
+                                Organizaciones
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="events-link">
+                                <i class="bi bi-calendar-event me-2"></i>
+                                Eventos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="participants-link">
+                                <i class="bi bi-people me-2"></i>
+                                Participantes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="attendance-link">
+                                <i class="bi bi-check-square me-2"></i>
+                                Asistencias
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="notifications-link">
+                                <i class="bi bi-bell me-2"></i>
+                                Notificaciones
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="reports-link">
+                                <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                                Reportes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="settings-link">
+                                <i class="bi bi-gear me-2"></i>
+                                Configuración
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" id="page-title">Dashboard</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button id="run-diagnostics-btn" class="btn btn-sm btn-outline-danger me-2">
+                            <i class="bi bi-tools me-1"></i>Diagnóstico
+                        </button>
+                        <button id="reload-page-btn" class="btn btn-sm btn-outline-secondary me-2">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Recargar
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle me-1"></i>
+                                Admin
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#">Perfil</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" id="logout-btn">Cerrar sesión</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard content -->
+                <div id="dashboard-content" class="content-section">
+                    <div class="row">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Organizaciones</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="org-count">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-building fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Eventos</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="event-count">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-calendar-event fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Participantes</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="participant-count">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-people fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-warning shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Asistencias</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="attendance-count">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-check-square fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Eventos Recientes</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" id="recent-events-table" width="100%" cellspacing="0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Fecha</th>
+                                                    <th>Organización</th>
+                                                    <th>Asistencias</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="recent-events-body">
+                                                <!-- Los datos se cargarán dinámicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Estadísticas de Notificaciones</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="position: relative; height:300px; width:100%">
+                                        <canvas id="notification-stats-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Desempeño por Evento</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="position: relative; height:200px; width:100%">
+                                        <canvas id="notification-performance-chart"></canvas>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" id="notification-performance-table" width="100%" cellspacing="0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Evento</th>
+                                                    <th>Enviadas</th>
+                                                    <th>Entregadas</th>
+                                                    <th>Leídas</th>
+                                                    <th>Efectividad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="notification-performance-body">
+                                                <!-- Los datos se cargarán dinámicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="notifications-content" class="content-section d-none">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="m-0 font-weight-bold">Estadísticas de Notificaciones</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="notification-performance-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Resto del contenido de notificaciones -->
+                    </div>
+                </div>
+
+                <!-- Organizations content (hidden by default) -->
+                <div id="organizations-content" class="content-section d-none">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h3>Organizaciones</h3>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#organizationModal" id="add-organization-btn">
+                            <i class="bi bi-plus-circle me-1"></i> Nueva Organización
+                        </button>
+                    </div>
+                    
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold">Listado de Organizaciones</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="organizations-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Descripción</th>
+                                            <th>Estado</th>
+                                            <th>Participantes</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="organizations-body">
+                                        <!-- Los datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events content (hidden by default) -->
+                <div id="events-content" class="content-section d-none">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h3>Eventos</h3>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventModal" id="add-event-btn">
+                            <i class="bi bi-plus-circle me-1"></i> Nuevo Evento
+                        </button>
+                    </div>
+                    
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold">Listado de Eventos</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="events-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Fecha</th>
+                                            <th>Organización</th>
+                                            <th>Estado</th>
+                                            <th>Asistencias</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="events-body">
+                                        <!-- Los datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Participants content (hidden by default) -->
+                <div id="participants-content" class="content-section d-none">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h3>Participantes</h3>
+                        <div>
+                            <button class="btn btn-secondary me-2" data-bs-toggle="modal" data-bs-target="#importParticipantsModal" id="import-participants-btn">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#participantModal" id="add-participant-btn">
+                                <i class="bi bi-plus-circle me-1"></i> Nuevo Participante
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold">Listado de Participantes</h6>
+                            <div class="d-flex">
+                                <input type="text" class="form-control form-control-sm me-2" placeholder="Buscar..." id="participant-search" style="width: 200px;">
+                                <button class="btn btn-sm btn-outline-primary" id="participant-search-btn">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="participants-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Cédula</th>
+                                            <th>Nombre</th>
+                                            <th>Organización</th>
+                                            <th>Telegram</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="participants-body">
+                                        <!-- Los datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <nav aria-label="Paginación de participantes">
+                                <ul class="pagination justify-content-center mt-4" id="participants-pagination">
+                                    <!-- Paginación generada dinámicamente -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attendance content (hidden by default) -->
+                <div id="attendance-content" class="content-section d-none">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h3>Registro de Asistencias</h3>
+                        <div>
+                            <button class="btn btn-secondary me-2" id="export-attendance-btn">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </button>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#attendanceModal" id="add-attendance-btn">
+                                <i class="bi bi-plus-circle me-1"></i> Registrar Asistencia
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Resumen de Asistencias</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="position: relative; height:300px; width:100%">
+                                        <canvas id="attendance-summary-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Estadísticas por Evento</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container" style="position: relative; height:300px; width:100%">
+                                        <canvas id="attendance-by-event-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla de resumen de asistencias por evento -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold">Resumen de Asistencias por Evento</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="attendance-summary-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Evento</th>
+                                            <th>Fecha</th>
+                                            <th>Total</th>
+                                            <th>Confirmados</th>
+                                            <th>Pendientes</th>
+                                            <th>Porcentaje</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendance-summary-body">
+                                        <!-- Los datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold">Asistencias Registradas</h6>
+                            <div class="d-flex">
+                                <select class="form-select form-select-sm me-2" id="attendance-event-filter" style="width: 200px;">
+                                    <option value="">Todos los eventos</option>
+                                    <!-- Opciones cargadas dinámicamente -->
+                                </select>
+                                <input type="text" class="form-control form-control-sm me-2" placeholder="Buscar..." id="attendance-search" style="width: 200px;">
+                                <button class="btn btn-sm btn-outline-primary" id="attendance-search-btn">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="attendances-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Participante</th>
+                                            <th>Evento</th>
+                                            <th>Fecha</th>
+                                            <th>Método</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendances-body">
+                                        <!-- Los datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <nav aria-label="Paginación de asistencias">
+                                <ul class="pagination justify-content-center mt-4" id="attendances-pagination">
+                                    <!-- Paginación generada dinámicamente -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports content (hidden by default) -->
+                <div id="reports-content" class="content-section d-none">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h3>Reportes del Sistema</h3>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Reportes de Eventos -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow h-100">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Reportes de Eventos</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Generar informes detallados sobre eventos y su desempeño.</p>
+                                    <div class="list-group">
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="events-summary">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Resumen de Eventos</h6>
+                                                <span><i class="bi bi-file-earmark-text"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Información general sobre todos los eventos, incluyendo estadísticas de asistencia.</p>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="event-attendance-detail">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Detalle de Asistencia por Evento</h6>
+                                                <span><i class="bi bi-file-earmark-spreadsheet"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Lista detallada de participantes y su asistencia a un evento específico.</p>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="events-by-organization">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Eventos por Organización</h6>
+                                                <span><i class="bi bi-file-earmark-bar-graph"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Análisis de eventos agrupados por organización con métricas de participación.</p>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Reportes de Participantes -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow h-100">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Reportes de Participantes</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Analizar datos sobre participantes y su actividad en el sistema.</p>
+                                    <div class="list-group">
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="participants-by-organization">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Participantes por Organización</h6>
+                                                <span><i class="bi bi-file-earmark-text"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Listado de participantes agrupados por organización.</p>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="participant-activity">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Actividad de Participantes</h6>
+                                                <span><i class="bi bi-file-earmark-spreadsheet"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Historial de asistencias para cada participante con detalles de eventos.</p>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="participants-without-telegram">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Participantes sin Conexión a Telegram</h6>
+                                                <span><i class="bi bi-file-earmark-excel"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Lista de participantes que no tienen vinculada una cuenta de Telegram.</p>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Reportes de Asistencias -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow h-100">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Reportes de Asistencias</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Análisis detallados de datos de asistencia para eventos.</p>
+                                    <div class="list-group">
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="attendance-summary">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Resumen de Asistencias</h6>
+                                                <span><i class="bi bi-file-earmark-bar-graph"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Resumen estadístico de asistencias a todos los eventos.</p>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="attendance-by-date">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Asistencias por Período</h6>
+                                                <span><i class="bi bi-file-earmark-spreadsheet"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Análisis de asistencias en un rango de fechas específico.</p>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="attendance-method-analysis">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Análisis por Método de Registro</h6>
+                                                <span><i class="bi bi-file-earmark-pdf"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Distribución de asistencias según el método de registro utilizado.</p>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Reportes de Notificaciones -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card shadow h-100">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Reportes de Notificaciones</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Estadísticas y análisis sobre las notificaciones enviadas.</p>
+                                    <div class="list-group">
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="notification-effectiveness">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Efectividad de Notificaciones</h6>
+                                                <span><i class="bi bi-file-earmark-bar-graph"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Análisis de tasas de entrega, lectura y respuesta de notificaciones.</p>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="notification-response-time">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Tiempo de Respuesta</h6>
+                                                <span><i class="bi bi-file-earmark-spreadsheet"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Análisis de tiempos promedio entre envío, lectura y respuesta.</p>
+                                        </a>
+                                        <a href="#" class="list-group-item list-group-item-action generate-report" data-type="failed-notifications">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Notificaciones Fallidas</h6>
+                                                <span><i class="bi bi-file-earmark-text"></i></span>
+                                            </div>
+                                            <p class="mb-1 small">Listado de notificaciones fallidas con detalles de error.</p>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings content (hidden by default) -->
+                <div id="settings-content" class="content-section d-none">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h3>Configuración del Sistema</h3>
+                        <button class="btn btn-success" id="save-all-settings-btn">
+                            <i class="bi bi-save me-1"></i> Guardar Cambios
+                        </button>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Ajustes Generales -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold">Ajustes Generales</h6>
+                                    <button class="btn btn-sm btn-outline-primary" id="save-general-settings-btn">
+                                        <i class="bi bi-save"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <form id="general-settings-form">
+                                        <div class="mb-3">
+                                            <label for="system-name" class="form-label">Nombre del Sistema</label>
+                                            <input type="text" class="form-control" id="system-name" placeholder="Sistema de Eventos">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="system-admin-email" class="form-label">Email de Administración</label>
+                                            <input type="email" class="form-control" id="system-admin-email" placeholder="admin@example.com">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="timezone" class="form-label">Zona Horaria</label>
+                                            <select class="form-select" id="timezone">
+                                                <option value="America/Caracas">Venezuela (UTC-04:00)</option>
+                                                <option value="America/Bogota">Colombia (UTC-05:00)</option>
+                                                <option value="America/Mexico_City">México (UTC-06:00)</option>
+                                                <option value="America/Lima">Perú (UTC-05:00)</option>
+                                                <option value="America/Santiago">Chile (UTC-04:00)</option>
+                                                <option value="America/Argentina/Buenos_Aires">Argentina (UTC-03:00)</option>
+                                                <option value="Europe/Madrid">España (UTC+01:00)</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="date-format" class="form-label">Formato de Fecha</label>
+                                            <select class="form-select" id="date-format">
+                                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                                <option value="DD-MM-YYYY">DD-MM-YYYY</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="maintenance-mode">
+                                            <label class="form-check-label" for="maintenance-mode">Modo Mantenimiento</label>
+                                            <div class="form-text">Al activar, el bot responderá con un mensaje de mantenimiento.</div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Configuración del Bot -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold">Configuración del Bot</h6>
+                                    <button class="btn btn-sm btn-outline-primary" id="save-bot-settings-btn">
+                                        <i class="bi bi-save"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <form id="bot-settings-form">
+                                        <div class="mb-3">
+                                            <label for="bot-token" class="form-label">Token de Telegram Bot</label>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="bot-token" placeholder="123456789:ABCDEFGHIJKLMN-opqrstuvwxyz">
+                                                <button class="btn btn-outline-secondary" type="button" id="toggle-token-btn">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </div>
+                                            <div class="form-text">Obtenido desde <a href="https://t.me/BotFather" target="_blank">@BotFather</a> en Telegram.</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="bot-username" class="form-label">Username del Bot</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">@</span>
+                                                <input type="text" class="form-control" id="bot-username" placeholder="MiBot">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="welcome-message" class="form-label">Mensaje de Bienvenida</label>
+                                            <textarea class="form-control" id="welcome-message" rows="3" placeholder="¡Bienvenido al Bot de Eventos!"></textarea>
+                                            <div class="form-text">Puedes usar variables: {nombre}, {apellido}</div>
+                                        </div>
+                                        
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="require-registration">
+                                            <label class="form-check-label" for="require-registration">Requerir Registro</label>
+                                            <div class="form-text">Si está habilitado, los usuarios deberán registrarse antes de usar el bot.</div>
+                                        </div>
+                                        
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="use-webhook" checked>
+                                            <label class="form-check-label" for="use-webhook">Usar WebHook</label>
+                                            <div class="form-text">Recomendado para producción. Desactivar para desarrollo local.</div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Configuración de Notificaciones -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold">Notificaciones</h6>
+                                    <button class="btn btn-sm btn-outline-primary" id="save-notification-settings-btn">
+                                        <i class="bi bi-save"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <form id="notification-settings-form">
+                                        <div class="mb-3">
+                                            <label for="default-reminder-time" class="form-label">Recordatorio Predeterminado</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="default-reminder-time" min="1" value="24">
+                                                <span class="input-group-text">horas antes</span>
+                                            </div>
+                                            <div class="form-text">Tiempo predeterminado para enviar recordatorios de eventos.</div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="notification-limit" class="form-label">Límite de Notificaciones</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="notification-limit" min="10" value="100">
+                                                <span class="input-group-text">por hora</span>
+                                            </div>
+                                            <div class="form-text">Máximo de notificaciones por hora para evitar limitaciones de Telegram.</div>
+                                        </div>
+                                        
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="send-error-notifications" checked>
+                                            <label class="form-check-label" for="send-error-notifications">Notificar Errores</label>
+                                            <div class="form-text">Enviar notificaciones al administrador cuando ocurran errores.</div>
+                                        </div>
+                                        
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="auto-retry-failed" checked>
+                                            <label class="form-check-label" for="auto-retry-failed">Reintentar Notificaciones Fallidas</label>
+                                            <div class="form-text">Reintentar automáticamente las notificaciones que fallen.</div>
+                                        </div>
+                                        
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="use-scheduled-notifications" checked>
+                                            <label class="form-check-label" for="use-scheduled-notifications">Habilitar Notificaciones Programadas</label>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Administradores del Sistema -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold">Administradores</h6>
+                                    <button class="btn btn-sm btn-outline-primary" id="add-admin-btn">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" id="admins-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Usuario</th>
+                                                    <th>ID Telegram</th>
+                                                    <th>Tipo</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="admins-table-body">
+                                                <!-- Cargado dinámicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Respaldo y Restauración -->
+                        <div class="col-lg-12">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold">Respaldo y Restauración</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card mb-4">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Crear Respaldo</h5>
+                                                    <p class="card-text">Genere un respaldo completo de la base de datos del sistema.</p>
+                                                    <div class="mb-3 form-check">
+                                                        <input type="checkbox" class="form-check-input" id="include-attachments">
+                                                        <label class="form-check-label" for="include-attachments">Incluir archivos adjuntos</label>
+                                                    </div>
+                                                    <button class="btn btn-primary" id="create-backup-btn">
+                                                        <i class="bi bi-download me-1"></i> Crear Respaldo
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Restaurar Sistema</h5>
+                                                    <p class="card-text">Restaure el sistema a partir de un archivo de respaldo.</p>
+                                                    <div class="mb-3">
+                                                        <label for="backup-file" class="form-label">Archivo de Respaldo</label>
+                                                        <input class="form-control" type="file" id="backup-file" accept=".sql,.zip">
+                                                    </div>
+                                                    <button class="btn btn-warning" id="restore-backup-btn">
+                                                        <i class="bi bi-upload me-1"></i> Restaurar Sistema
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4">
+                                        <h6>Respaldos Anteriores</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered" id="backups-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Fecha</th>
+                                                        <th>Tamaño</th>
+                                                        <th>Creado por</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="backups-table-body">
+                                                    <!-- Cargado dinámicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para añadir/editar organización -->
+    <div class="modal fade" id="organizationModal" tabindex="-1" aria-labelledby="organizationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="organizationModalLabel">Nueva Organización</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="organization-form">
+                        <input type="hidden" id="organization-id">
+                        <div class="mb-3">
+                            <label for="organization-name" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="organization-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="organization-description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="organization-description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="organization-contact-email" class="form-label">Email de contacto</label>
+                            <input type="email" class="form-control" id="organization-contact-email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="organization-contact-phone" class="form-label">Teléfono de contacto</label>
+                            <input type="text" class="form-control" id="organization-contact-phone">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="organization-active" checked>
+                            <label class="form-check-label" for="organization-active">Activa</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-organization-btn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Eventos -->
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventModalLabel">Nuevo Evento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="event-form">
+                        <input type="hidden" id="event-id">
+                        
+                        <div class="mb-3">
+                            <label for="event-name" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="event-name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="event-description" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="event-description" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="event-date" class="form-label">Fecha y Hora</label>
+                            <input type="datetime-local" class="form-control" id="event-date" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="event-location" class="form-label">Ubicación</label>
+                            <input type="text" class="form-control" id="event-location">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="event-organization" class="form-label">Organización</label>
+                            <select class="form-select" id="event-organization" required>
+                                <option value="">Seleccione una organización</option>
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="event-active" checked>
+                            <label class="form-check-label" for="event-active">Activo</label>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Notificaciones</label>
+                            <div class="mb-2 form-check">
+                                <input type="checkbox" class="form-check-input" id="event-notification-enabled" checked>
+                                <label class="form-check-label" for="event-notification-enabled">Habilitar notificaciones</label>
+                            </div>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="event-notification-hours" min="1" value="24">
+                                <span class="input-group-text">horas antes</span>
+                            </div>
+                            <div class="form-text">Tiempo de anticipación para enviar notificaciones</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-event-btn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para añadir/editar participante -->
+    <div class="modal fade" id="participantModal" tabindex="-1" aria-labelledby="participantModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="participantModalLabel">Nuevo Participante</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="participant-form">
+                        <input type="hidden" id="participant-id">
+                        
+                        <div class="row mb-3">
+                            <div class="col-3">
+                                <label for="participant-nac" class="form-label">Nac.</label>
+                                <select class="form-select" id="participant-nac" required>
+                                    <option value="V">V</option>
+                                    <option value="E">E</option>
+                                    <option value="P">P</option>
+                                </select>
+                            </div>
+                            <div class="col-9">
+                                <label for="participant-cedula" class="form-label">Cédula</label>
+                                <input type="text" class="form-control" id="participant-cedula" required pattern="[0-9]+" 
+                                    title="Ingrese solo números">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="participant-firstName" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="participant-firstName" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="participant-lastName" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="participant-lastName" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="participant-telegramId" class="form-label">ID de Telegram</label>
+                            <input type="text" class="form-control" id="participant-telegramId">
+                            <div class="form-text">Opcional. ID numérico de Telegram del participante.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="participant-email" class="form-label">Correo electrónico</label>
+                            <input type="email" class="form-control" id="participant-email">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="participant-phone" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="participant-phone">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="participant-organization" class="form-label">Organización</label>
+                            <select class="form-select" id="participant-organization">
+                                <option value="">Sin organización</option>
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="participant-rol" class="form-label">Rol</label>
+                            <select class="form-select" id="participant-rol">
+                                <option value="user">Usuario</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-participant-btn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para importar participantes -->
+    <div class="modal fade" id="importParticipantsModal" tabindex="-1" aria-labelledby="importParticipantsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importParticipantsModalLabel">Importar Participantes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="import-participants-form">
+                        <div class="mb-3">
+                            <label for="import-file" class="form-label">Archivo CSV</label>
+                            <input type="file" class="form-control" id="import-file" accept=".csv" required>
+                            <div class="form-text">
+                                El archivo debe tener formato CSV con las siguientes columnas: <br>
+                                nac,cedula,firstName,lastName,telegramId,email,phone,organization_id,rol
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="import-organization" class="form-label">Organización por defecto</label>
+                            <select class="form-select" id="import-organization">
+                                <option value="">Sin organización</option>
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                            <div class="form-text">Se usará si no se especifica una organización en el CSV</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="import-has-header" checked>
+                            <label class="form-check-label" for="import-has-header">El archivo tiene encabezados</label>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="import-update-existing" checked>
+                            <label class="form-check-label" for="import-update-existing">Actualizar participantes existentes</label>
+                        </div>
+                    </form>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Antes de importar, se recomienda hacer una copia de seguridad de la base de datos.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="start-import-btn">Importar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para añadir/editar asistencia -->
+    <div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="attendanceModalLabel">Registrar Asistencia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="attendance-form">
+                        <input type="hidden" id="attendance-id">
+                        
+                        <div class="mb-3">
+                            <label for="attendance-participant" class="form-label">Participante</label>
+                            <select class="form-select" id="attendance-participant" required>
+                                <option value="">Seleccione un participante</option>
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attendance-event" class="form-label">Evento</label>
+                            <select class="form-select" id="attendance-event" required>
+                                <option value="">Seleccione un evento</option>
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attendance-date" class="form-label">Fecha de Registro</label>
+                            <input type="datetime-local" class="form-control" id="attendance-date" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attendance-method" class="form-label">Método de Registro</label>
+                            <select class="form-select" id="attendance-method">
+                                <option value="manual">Manual</option>
+                                <option value="bot">Bot Telegram</option>
+                                <option value="qr">Escaneo QR</option>
+                                <option value="location">Ubicación</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attendance-status" class="form-label">Estado</label>
+                            <select class="form-select" id="attendance-status">
+                                <option value="confirmed">Confirmada</option>
+                                <option value="pending">Pendiente</option>
+                                <option value="rejected">Rechazada</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attendance-location" class="form-label">Ubicación</label>
+                            <input type="text" class="form-control" id="attendance-location" placeholder="Latitud, Longitud">
+                            <div class="form-text">Formato: latitud, longitud (ej: 10.1234, -68.5678)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attendance-notes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="attendance-notes" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-attendance-btn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para exportar asistencias -->
+    <div class="modal fade" id="exportAttendanceModal" tabindex="-1" aria-labelledby="exportAttendanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportAttendanceModalLabel">Exportar Asistencias</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="export-attendance-form">
+                        <div class="mb-3">
+                            <label for="export-event" class="form-label">Evento</label>
+                            <select class="form-select" id="export-event">
+                                <option value="">Todos los eventos</option>
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="export-date-start" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="export-date-start">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="export-date-end" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="export-date-end">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Formato</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="export-format" id="export-format-csv" value="csv" checked>
+                                <label class="form-check-label" for="export-format-csv">
+                                    CSV
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="export-format" id="export-format-excel" value="excel">
+                                <label class="form-check-label" for="export-format-excel">
+                                    Excel
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="export-format" id="export-format-pdf" value="pdf">
+                                <label class="form-check-label" for="export-format-pdf">
+                                    PDF
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="export-include-details" checked>
+                            <label class="form-check-label" for="export-include-details">Incluir detalles completos</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="start-export-btn">Exportar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles de asistencia -->
+    <div class="modal fade" id="viewAttendanceModal" tabindex="-1" aria-labelledby="viewAttendanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewAttendanceModalLabel">Detalles de Asistencia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Información del Participante</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Nombre:</th>
+                                    <td id="view-participant-name"></td>
+                                </tr>
+                                <tr>
+                                    <th>Cédula:</th>
+                                    <td id="view-participant-cedula"></td>
+                                </tr>
+                                <tr>
+                                    <th>Organización:</th>
+                                    <td id="view-participant-organization"></td>
+                                </tr>
+                                <tr>
+                                    <th>ID Telegram:</th>
+                                    <td id="view-participant-telegram"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Información del Evento</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Nombre:</th>
+                                    <td id="view-event-name"></td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha:</th>
+                                    <td id="view-event-date"></td>
+                                </tr>
+                                <tr>
+                                    <th>Ubicación:</th>
+                                    <td id="view-event-location"></td>
+                                </tr>
+                                <tr>
+                                    <th>Organización:</th>
+                                    <td id="view-event-organization"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Detalles de Asistencia</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Fecha de Registro:</th>
+                                    <td id="view-attendance-date"></td>
+                                </tr>
+                                <tr>
+                                    <th>Método:</th>
+                                    <td id="view-attendance-method"></td>
+                                </tr>
+                                <tr>
+                                    <th>Estado:</th>
+                                    <td id="view-attendance-status"></td>
+                                </tr>
+                                <tr>
+                                    <th>Notas:</th>
+                                    <td id="view-attendance-notes"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Ubicación de Registro</h6>
+                            <div id="view-attendance-map" style="height: 200px; background-color: #f8f9fa; border-radius: 4px;">
+                                <div class="text-center p-3" id="view-attendance-map-placeholder">
+                                    <i class="bi bi-geo-alt" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">No hay datos de ubicación</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="edit-from-view-btn">Editar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para añadir/editar notificación -->
+    <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationModalLabel">Nueva Notificación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="notification-form">
+                        <input type="hidden" id="notification-id">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="notification-type" class="form-label">Tipo de Notificación</label>
+                                <select class="form-select" id="notification-type" required>
+                                    <option value="">Seleccione un tipo</option>
+                                    <option value="event_reminder">Recordatorio de Evento</option>
+                                    <option value="attendance_confirmation">Confirmación de Asistencia</option>
+                                    <option value="event_update">Actualización de Evento</option>
+                                    <option value="event_cancellation">Cancelación de Evento</option>
+                                    <option value="custom_message">Mensaje Personalizado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="notification-event" class="form-label">Evento relacionado</label>
+                                <select class="form-select" id="notification-event">
+                                    <option value="">Seleccione un evento</option>
+                                    <!-- Opciones cargadas dinámicamente -->
+                                </select>
+                                <div class="form-text">Opcional para mensajes personalizados</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notification-message" class="form-label">Mensaje</label>
+                            <textarea class="form-control" id="notification-message" rows="4" required></textarea>
+                            <div class="form-text">
+                                Puedes usar las siguientes variables: {nombre}, {evento}, {fecha}, {hora}, {ubicacion}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="notification-schedule-date" class="form-label">Fecha de envío</label>
+                                <input type="date" class="form-control" id="notification-schedule-date" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="notification-schedule-time" class="form-label">Hora de envío</label>
+                                <input type="time" class="form-control" id="notification-schedule-time" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Destinatarios</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="notification-recipients" id="recipients-all" value="all" checked>
+                                <label class="form-check-label" for="recipients-all">
+                                    Todos los participantes del evento
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="notification-recipients" id="recipients-organization" value="organization">
+                                <label class="form-check-label" for="recipients-organization">
+                                    Por organización
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="notification-recipients" id="recipients-custom" value="custom">
+                                <label class="form-check-label" for="recipients-custom">
+                                    Lista personalizada
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="organization-selector" class="mb-3 d-none">
+                            <label for="notification-organization" class="form-label">Organización</label>
+                            <select class="form-select" id="notification-organization">
+                                <option value="">Seleccione una organización</option>
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <div id="participants-selector" class="mb-3 d-none">
+                            <label for="notification-participants" class="form-label">Participantes</label>
+                            <select class="form-select" id="notification-participants" multiple size="5">
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                            <div class="form-text">
+                                Mantenga presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples participantes
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="notification-include-buttons" checked>
+                            <label class="form-check-label" for="notification-include-buttons">
+                                Incluir botones de confirmación de asistencia
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-info" id="preview-notification-btn">Vista previa</button>
+                    <button type="button" class="btn btn-primary" id="save-notification-btn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Vista Previa de Notificación -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewModalLabel">Vista Previa de Notificación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center mb-3">
+                        <div class="preview-container" style="max-width: 320px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background-color: #f8f9fa;">
+                            <div class="preview-header mb-2 d-flex align-items-center">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #0088cc; color: white; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-send"></i>
+                                </div>
+                                <div class="ms-2">
+                                    <div><strong>Bot de Notificaciones</strong></div>
+                                    <div class="text-muted small">Mensaje de ejemplo</div>
+                                </div>
+                            </div>
+                            <div class="preview-body mb-3" id="preview-message">
+                                <!-- El contenido del mensaje se cargará dinámicamente -->
+                            </div>
+                            <div class="preview-buttons" id="preview-buttons">
+                                <!-- Los botones se cargarán dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <p class="mb-0 small">Esta es una vista previa aproximada de cómo se verá la notificación en Telegram. La apariencia real puede variar según el dispositivo y la configuración del usuario.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de estadísticas de notificación -->
+    <div class="modal fade" id="notificationStatsModal" tabindex="-1" aria-labelledby="notificationStatsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationStatsModalLabel">Estadísticas de Notificación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 id="notification-stats-title">Detalles de la notificación</h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Tipo:</th>
+                                    <td id="stats-notification-type"></td>
+                                </tr>
+                                <tr>
+                                    <th>Evento:</th>
+                                    <td id="stats-notification-event"></td>
+                                </tr>
+                                <tr>
+                                    <th>Programada para:</th>
+                                    <td id="stats-notification-scheduled"></td>
+                                </tr>
+                                <tr>
+                                    <th>Estado:</th>
+                                    <td id="stats-notification-status"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container" style="position: relative; height:200px; width:100%">
+                                <canvas id="notification-detail-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>Resultados de Envío</h6>
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="progress-sent" class="progress-bar bg-primary" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Enviados: 0%</div>
+                        <div id="progress-failed" class="progress-bar bg-danger" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Fallidos: 0%</div>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="progress-read" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Leídos: 0%</div>
+                        <div id="progress-delivered" class="progress-bar bg-info" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Entregados: 0%</div>
+                        <div id="progress-pending" class="progress-bar bg-secondary" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Pendientes: 0%</div>
+                    </div>
+                    
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered table-striped" id="notification-recipients-table">
+                            <thead>
+                                <tr>
+                                    <th>Destinatario</th>
+                                    <th>Estado</th>
+                                    <th>Enviado</th>
+                                    <th>Entregado</th>
+                                    <th>Leído</th>
+                                    <th>Respuesta</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notification-recipients-body">
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="resend-notification-btn">Reenviar a Fallidos</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para configurar parámetros de reporte -->
+    <div class="modal fade" id="reportConfigModal" tabindex="-1" aria-labelledby="reportConfigModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reportConfigModalLabel">Configurar Reporte</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="report-config-form">
+                        <input type="hidden" id="report-type">
+                        
+                        <!-- Parámetros dinámicos (se mostrarán según el tipo de reporte) -->
+                        <div id="report-params-container">
+                            <!-- Organización -->
+                            <div class="mb-3 param-field" id="organization-param" style="display: none;">
+                                <label for="report-organization" class="form-label">Organización</label>
+                                <select class="form-select" id="report-organization">
+                                    <option value="">Todas las organizaciones</option>
+                                    <!-- Opciones cargadas dinámicamente -->
+                                </select>
+                            </div>
+                            
+                            <!-- Evento -->
+                            <div class="mb-3 param-field" id="event-param" style="display: none;">
+                                <label for="report-event" class="form-label">Evento</label>
+                                <select class="form-select" id="report-event">
+                                    <option value="">Seleccione un evento</option>
+                                    <!-- Opciones cargadas dinámicamente -->
+                                </select>
+                            </div>
+                            
+                            <!-- Fechas -->
+                            <div class="mb-3 param-field" id="date-range-param" style="display: none;">
+                                <label class="form-label">Rango de Fechas</label>
+                                <div class="row">
+                                    <div class="col">
+                                        <input type="date" class="form-control" id="report-date-start" placeholder="Inicio">
+                                    </div>
+                                    <div class="col">
+                                        <input type="date" class="form-control" id="report-date-end" placeholder="Fin">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Formato -->
+                            <div class="mb-3">
+                                <label class="form-label">Formato de Salida</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="report-format" id="format-excel" value="excel" checked>
+                                    <label class="form-check-label" for="format-excel">
+                                        Excel (.xlsx)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="report-format" id="format-csv" value="csv">
+                                    <label class="form-check-label" for="format-csv">
+                                        CSV
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="report-format" id="format-pdf" value="pdf">
+                                    <label class="form-check-label" for="format-pdf">
+                                        PDF
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Opciones adicionales -->
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="include-charts" checked>
+                                <label class="form-check-label" for="include-charts">
+                                    Incluir gráficos (donde aplique)
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="generate-report-btn">Generar Reporte</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para añadir/editar administrador -->
+    <div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminModalLabel">Nuevo Administrador</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="admin-form">
+                        <input type="hidden" id="admin-id">
+                        
+                        <div class="mb-3">
+                            <label for="admin-name" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="admin-name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="admin-telegram-id" class="form-label">ID de Telegram</label>
+                            <input type="text" class="form-control" id="admin-telegram-id" required>
+                            <div class="form-text">ID numérico único de Telegram. Use @username_to_id_bot para obtenerlo.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="admin-type" class="form-label">Tipo de Administrador</label>
+                            <select class="form-select" id="admin-type" required>
+                                <option value="super">Super Administrador</option>
+                                <option value="admin">Administrador</option>
+                                <option value="operator">Operador</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="admin-email" class="form-label">Email (opcional)</label>
+                            <input type="email" class="form-control" id="admin-email">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="admin-organization" class="form-label">Organización</label>
+                            <select class="form-select" id="admin-organization">
+                                <option value="">Todas las organizaciones</option>
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                            <div class="form-text">Solo para administradores de tipo "Operador"</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="admin-active" checked>
+                            <label class="form-check-label" for="admin-active">Activo</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-admin-btn">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificaciones Programadas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold">Notificaciones Programadas</h6>
+            <div class="d-flex">
+                <div class="dropdown me-2">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="notification-filter-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Filtrar
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notification-filter-dropdown">
+                        <li><a class="dropdown-item" href="#" data-filter="all">Todas</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="pending">Pendientes</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="sent">Enviadas</a></li>
+                        <li><a class="dropdown-item" href="#" data-filter="failed">Fallidas</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" data-filter="event">Por evento</a></li>
+                    </ul>
+                </div>
+                <input type="text" class="form-control form-control-sm me-2" placeholder="Buscar..." id="notification-search" style="width: 200px;">
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="notifications-table" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Evento</th>
+                            <th>Tipo</th>
+                            <th>Programada para</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="notifications-body">
+                        <!-- Los datos se cargarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <nav aria-label="Paginación de notificaciones">
+                <ul class="pagination justify-content-center mt-4" id="notifications-pagination">
+                    <!-- Paginación generada dinámicamente -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+    <script src="diagnostics.js"></script>
+    <script>
+        // Configurar botón de diagnóstico
+        document.getElementById('run-diagnostics-btn').addEventListener('click', function() {
+            runDiagnostics();
+        });
+    </script>
+</body>
+</html> 

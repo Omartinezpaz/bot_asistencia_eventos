@@ -1,0 +1,15 @@
+{
+  "name": "telegram-bot-app",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de eventos y notificaciones de Telegram",
+  "scripts": {
+    "dev": "cd bot && npm run dev",
+    "start": "cd bot && npm start"
+  },
+  "dependencies": {
+    "csv-writer": "^1.6.0",
+    "exceljs": "^4.4.0",
+    "node-geocoder": "^4.4.1",
+    "pdfkit": "^0.17.1"
+  }
+}

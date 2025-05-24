@@ -1,0 +1,121 @@
+# Tutorial de Uso del Bot de Notificaciones para Usuarios
+
+Este tutorial te guiará paso a paso en el uso del Bot de Notificaciones para eventos electorales, mostrándote cómo registrarte, consultar tu centro de votación y recibir notificaciones importantes.
+
+## 1. Comenzando con el Bot
+
+### Iniciar el Bot
+Para comenzar a usar el bot:
+1. Busca el bot en Telegram por su nombre o usa el enlace que te hayan proporcionado
+2. Envía el comando `/start` para iniciar la conversación
+
+Verás un mensaje de bienvenida con botones para las principales funciones:
+- 🔐 Registrarse
+- 🏫 Mi Centro
+- 📆 Ver Eventos
+- ✅ Asistencia
+- 📍 Compartir Ubicación
+- 🔍 Consultar Cédula
+
+## 2. Registro en el Sistema
+
+Para usar todas las funciones del bot, primero debes registrarte:
+
+1. Selecciona el botón "🔐 Registrarse" o envía el comando `/login`
+2. Ingresa tu número de cédula cuando el bot lo solicite
+3. Proporciona tu número de teléfono en el formato solicitado
+
+Una vez registrado, verás un mensaje de confirmación con tus datos registrados.
+
+## 3. Consultar tu Centro de Votación
+
+Para ver información sobre tu centro de votación:
+
+1. Selecciona el botón "🏫 Mi Centro" o envía el comando `/centro`
+2. El bot mostrará:
+   - Nombre del centro
+   - Dirección completa
+   - Estado, municipio y parroquia
+   - Un botón para ver la ubicación en Google Maps
+
+Si necesitas consultar el centro de votación de otra persona:
+1. Usa el comando `/consultar_cedula` seguido del número de cédula
+   - Ejemplo: `/consultar_cedula 12345678`
+2. El bot mostrará la información del centro correspondiente a esa cédula
+
+## 4. Recibir y Ver Notificaciones
+
+El bot te enviará automáticamente notificaciones importantes sobre los eventos electorales:
+
+- **Día anterior a las elecciones**: Recordatorio con información de tu centro
+- **Mañana del día de elecciones**: Recordatorio para acudir temprano
+- **Mediodía del día de elecciones**: Recordatorio si aún no has votado
+- **Tarde del día de elecciones**: Último recordatorio antes del cierre
+- **Después de las elecciones**: Agradecimiento por tu participación
+
+Cada notificación incluirá información personalizada sobre tu centro de votación.
+
+## 5. Consultar Eventos Disponibles
+
+Para ver los eventos programados:
+
+1. Selecciona el botón "📆 Ver Eventos" o envía el comando `/eventos`
+2. Verás una lista de eventos disponibles con:
+   - Nombre y descripción del evento
+   - Fecha y hora
+   - Ubicación
+   - Estado de tu asistencia (pendiente o registrada)
+3. Puedes seleccionar un evento para registrar tu asistencia
+
+## 6. Registrar tu Asistencia
+
+Para confirmar que has votado o asistido a un evento:
+
+1. Selecciona el botón "✅ Asistencia" o envía el comando `/asistencia`
+2. Si hay varios eventos, selecciona el evento al que deseas registrar tu asistencia
+3. El bot confirmará que tu asistencia ha sido registrada
+
+También puedes registrar tu asistencia directamente desde la lista de eventos.
+
+## 7. Compartir tu Ubicación
+
+Si necesitas ayuda para encontrar tu centro de votación:
+
+1. Selecciona el botón "📍 Compartir Ubicación" o envía el comando `/ubicacion`
+2. Cuando el bot lo solicite, usa el botón "📍 Compartir mi ubicación actual"
+3. El bot te mostrará:
+   - La información de tu centro de votación
+   - La distancia aproximada desde tu ubicación actual
+   - Un enlace para ver la ruta en Google Maps
+
+## 8. Obtener Ayuda
+
+Si necesitas ayuda en cualquier momento:
+
+1. Envía el comando `/help`
+2. El bot mostrará una lista de todos los comandos disponibles y sus funciones
+
+## Consejos Útiles
+
+- **Mantén actualizada la app**: Asegúrate de tener la última versión de Telegram
+- **Verifica tu registro**: Usa `/centro` para confirmar que tus datos están correctos
+- **Activa las notificaciones**: Asegúrate de que las notificaciones de Telegram estén activadas para no perderte información importante
+- **Problemas de conexión**: Si tienes problemas de conexión, intenta enviar `/start` para reiniciar la conversación
+
+## Preguntas Frecuentes
+
+**¿Cómo cambio mis datos de registro?**
+Deberás contactar a un administrador para actualizar tu información.
+
+**¿Qué hago si no aparece mi centro de votación?**
+Verifica que tu cédula esté correctamente registrada. Si el problema persiste, contacta a un administrador.
+
+**¿Las notificaciones consumen muchos datos?**
+No, las notificaciones de Telegram consumen muy pocos datos móviles.
+
+**¿Puedo usar el bot sin conexión a internet?**
+No, necesitas conexión a internet para recibir y enviar mensajes a través de Telegram.
+
+---
+
+Recuerda que este bot está diseñado para facilitar tu participación en el proceso electoral. ¡Tu voto es importante!

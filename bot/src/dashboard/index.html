@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Estadísticas - Bot de Notificaciones</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-bar-chart-fill me-2"></i>
+                Panel de Estadísticas
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#eventos">Eventos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#notificaciones">Notificaciones</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#usuarios">Usuarios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#configuracion">Configuración</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="refreshData">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar datos
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-filter"></i> Filtros
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="eventSelect" class="form-label">Evento</label>
+                            <select class="form-select" id="eventSelect">
+                                <option value="all">Todos los eventos</option>
+                                <!-- Los eventos se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dateRangeStart" class="form-label">Fecha inicio</label>
+                            <input type="date" class="form-control" id="dateRangeStart">
+                        </div>
+                        <div class="mb-3">
+                            <label for="dateRangeEnd" class="form-label">Fecha fin</label>
+                            <input type="date" class="form-control" id="dateRangeEnd">
+                        </div>
+                        <div class="mb-3">
+                            <label for="notificationTypeSelect" class="form-label">Tipo de notificación</label>
+                            <select class="form-select" id="notificationTypeSelect">
+                                <option value="all">Todos los tipos</option>
+                                <option value="day_before">Día anterior</option>
+                                <option value="same_day_early">Mismo día (mañana)</option>
+                                <option value="same_day_noon">Mismo día (mediodía)</option>
+                                <option value="same_day_afternoon">Mismo día (tarde)</option>
+                                <option value="after_event">Después del evento</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary w-100" id="applyFilters">
+                            <i class="bi bi-funnel"></i> Aplicar filtros
+                        </button>
+                    </div>
+                </div>
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-download"></i> Exportar datos
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-success" id="exportCSV">
+                                <i class="bi bi-file-earmark-spreadsheet"></i> Exportar a CSV
+                            </button>
+                            <button class="btn btn-outline-success" id="exportExcel">
+                                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                            </button>
+                            <button class="btn btn-outline-success" id="exportJSON">
+                                <i class="bi bi-file-earmark-code"></i> Exportar a JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-bell"></i> Alertas
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="alertLowReadRate">
+                            <label class="form-check-label" for="alertLowReadRate">Alertar si tasa de lectura < 50%</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="alertLowResponseRate">
+                            <label class="form-check-label" for="alertLowResponseRate">Alertar si tasa de respuesta < 20%</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="alertErrorRate">
+                            <label class="form-check-label" for="alertErrorRate">Alertar si tasa de errores > 5%</label>
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <label for="alertEmail" class="form-label">Email para alertas</label>
+                            <input type="email" class="form-control" id="alertEmail" placeholder="admin@ejemplo.com">
+                        </div>
+                        <button class="btn btn-info w-100" id="saveAlertSettings">
+                            <i class="bi bi-save"></i> Guardar configuración
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Total Notificaciones</h6>
+                                <h2 class="card-text" id="totalNotifications">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Tasa de Envío</h6>
+                                <h2 class="card-text" id="sentRate">0%</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Tasa de Lectura</h6>
+                                <h2 class="card-text" id="readRate">0%</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100 text-center">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">Tasa de Respuesta</h6>
+                                <h2 class="card-text" id="responseRate">0%</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <i class="bi bi-pie-chart"></i> Resumen de Notificaciones
+                            </div>
+                            <div class="card-body">
+                                <canvas id="notificationSummaryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <i class="bi bi-clock"></i> Tiempos de Respuesta
+                            </div>
+                            <div class="card-body">
+                                <canvas id="responseTimeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-calendar-event"></i> Rendimiento por Tipo de Notificación
+                            </div>
+                            <div class="card-body">
+                                <canvas id="notificationTypeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-people"></i> Segmentación de Usuarios
+                            </div>
+                            <div class="card-body">
+                                <ul class="nav nav-tabs" id="userSegmentationTabs">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" data-bs-toggle="tab" href="#byRegion">Por Región</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-bs-toggle="tab" href="#byAge">Por Edad</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-bs-toggle="tab" href="#byEngagement">Por Nivel de Participación</a>
+                                    </li>
+                                </ul>
+                                <div class="tab-content mt-3">
+                                    <div class="tab-pane fade show active" id="byRegion">
+                                        <canvas id="regionSegmentationChart"></canvas>
+                                    </div>
+                                    <div class="tab-pane fade" id="byAge">
+                                        <canvas id="ageSegmentationChart"></canvas>
+                                    </div>
+                                    <div class="tab-pane fade" id="byEngagement">
+                                        <canvas id="engagementSegmentationChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-table"></i> Detalles de Notificaciones
+                                    </div>
+                                    <div>
+                                        <input type="text" class="form-control form-control-sm" id="tableSearch" placeholder="Buscar...">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Evento</th>
+                                                <th>Tipo</th>
+                                                <th>Fecha Programada</th>
+                                                <th>Enviadas</th>
+                                                <th>Leídas</th>
+                                                <th>Respondidas</th>
+                                                <th>Errores</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="notificationsTableBody">
+                                            <!-- Los datos se cargarán dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <nav>
+                                    <ul class="pagination justify-content-center" id="tablePagination">
+                                        <!-- La paginación se generará dinámicamente -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para detalles de notificación -->
+    <div class="modal fade" id="notificationDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de Notificación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Información General</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>ID:</th>
+                                    <td id="modalNotificationId"></td>
+                                </tr>
+                                <tr>
+                                    <th>Evento:</th>
+                                    <td id="modalEventName"></td>
+                                </tr>
+                                <tr>
+                                    <th>Tipo:</th>
+                                    <td id="modalNotificationType"></td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha Programada:</th>
+                                    <td id="modalScheduledDate"></td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha de Envío:</th>
+                                    <td id="modalSentDate"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Estadísticas</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Total Destinatarios:</th>
+                                    <td id="modalTotalRecipients"></td>
+                                </tr>
+                                <tr>
+                                    <th>Enviadas:</th>
+                                    <td id="modalSentCount"></td>
+                                </tr>
+                                <tr>
+                                    <th>Leídas:</th>
+                                    <td id="modalReadCount"></td>
+                                </tr>
+                                <tr>
+                                    <th>Respondidas:</th>
+                                    <td id="modalRespondedCount"></td>
+                                </tr>
+                                <tr>
+                                    <th>Errores:</th>
+                                    <td id="modalErrorCount"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Plantilla de Mensaje</h6>
+                            <div class="border p-3 bg-light" id="modalMessageTemplate"></div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Destinatarios</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Estado</th>
+                                            <th>Enviada</th>
+                                            <th>Leída</th>
+                                            <th>Respondida</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="modalRecipientsTable">
+                                        <!-- Los datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="exportDetailBtn">Exportar Detalles</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-light text-center text-muted py-3 mt-4">
+        <div class="container">
+            Panel de Estadísticas v1.0 | Bot de Notificaciones
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html> 

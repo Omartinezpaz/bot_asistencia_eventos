@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificación de Cédula - Sistema de Notificación de Eventos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      padding-top: 20px;
+      background-color: #f8f9fa;
+    }
+    .card {
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .result-container {
+      display: none;
+      margin-top: 20px;
+    }
+    .loader {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .nav-link {
+      color: #0d6efd;
+    }
+    .nav-link:hover {
+      color: #0a58ca;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/" class="nav-link">Inicio</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Verificar Cédula</li>
+      </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Verificación de Cédula</h4>
+          </div>
+          <div class="card-body">
+            <p class="lead">Ingresa tu número de cédula para consultar tu información electoral y centro de votación.</p>
+            
+            <form id="verificarForm">
+              <div class="mb-3">
+                <label for="cedula" class="form-label">Número de Cédula:</label>
+                <input type="text" class="form-control" id="cedula" placeholder="Ingresa tu número de cédula" required>
+                <div class="form-text">Ingresa solo números, sin puntos ni guiones.</div>
+              </div>
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Verificar</button>
+              </div>
+            </form>
+            
+            <div id="loader" class="loader">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p>Buscando información...</p>
+            </div>
+            
+            <div id="error" class="alert alert-danger mt-3" style="display: none;"></div>
+            
+            <div id="resultContainer" class="result-container">
+              <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                  <h5 class="mb-0">Información del Votante</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>Cédula:</strong> <span id="resultCedula"></span></p>
+                      <p><strong>Nombre:</strong> <span id="resultNombre"></span></p>
+                      <p><strong>Apellido:</strong> <span id="resultApellido"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                      <p><strong>Sexo:</strong> <span id="resultSexo"></span></p>
+                      <p><strong>Fecha de Nacimiento:</strong> <span id="resultFechaNac"></span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header bg-primary text-white">
+                  <h5 class="mb-0">Centro de Votación</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>Nombre del Centro:</strong> <span id="resultCentroNombre"></span></p>
+                      <p><strong>Dirección:</strong> <span id="resultCentroDireccion"></span></p>
+                      <p><strong>Código:</strong> <span id="resultCentroCodigo"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                      <p><strong>Estado:</strong> <span id="resultEstado"></span></p>
+                      <p><strong>Municipio:</strong> <span id="resultMunicipio"></span></p>
+                      <p><strong>Parroquia:</strong> <span id="resultParroquia"></span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="text-center mt-3">
+                <a href="https://t.me/notif_eventos_bot" target="_blank" class="btn btn-success">
+                  <i class="fab fa-telegram"></i> Reportar asistencia por Telegram
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <footer class="mt-5 text-center text-muted">
+      <p>&copy; 2024 Sistema de Notificación de Eventos. Todos los derechos reservados.</p>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <script>
+    document.getElementById('verificarForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const cedula = document.getElementById('cedula').value.trim();
+      
+      if (!cedula) {
+        showError('Por favor, ingresa un número de cédula válido.');
+        return;
+      }
+      
+      // Ocultar mensajes anteriores y mostrar loader
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('resultContainer').style.display = 'none';
+      document.getElementById('loader').style.display = 'block';
+      
+      // Realizar la petición al API
+      fetch(`/api/registro/${cedula}`)
+        .then(response => {
+          if (!response.ok) {
+            if (response.status === 404) {
+              throw new Error('No se encontró información para esta cédula. Verifica el número e intenta nuevamente.');
+            }
+            throw new Error('Error al consultar la información. Por favor, intenta nuevamente más tarde.');
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Ocultar loader
+          document.getElementById('loader').style.display = 'none';
+          
+          // Llenar los datos del resultado
+          document.getElementById('resultCedula').textContent = `${data.nacionalidad}-${data.cedula}`;
+          document.getElementById('resultNombre').textContent = data.nombre || 'No disponible';
+          document.getElementById('resultApellido').textContent = data.apellido || 'No disponible';
+          document.getElementById('resultSexo').textContent = data.sexo === 'M' ? 'Masculino' : 'Femenino';
+          
+          // Formatear fecha de nacimiento si existe
+          if (data.fecha_nacimiento) {
+            const fecha = new Date(data.fecha_nacimiento);
+            document.getElementById('resultFechaNac').textContent = fecha.toLocaleDateString('es-ES');
+          } else {
+            document.getElementById('resultFechaNac').textContent = 'No disponible';
+          }
+          
+          // Información del centro de votación
+          if (data.centro_votacion) {
+            document.getElementById('resultCentroNombre').textContent = data.centro_votacion.nombre || 'No disponible';
+            document.getElementById('resultCentroDireccion').textContent = data.centro_votacion.direccion || 'No disponible';
+            document.getElementById('resultCentroCodigo').textContent = data.centro_votacion.codigo || 'No disponible';
+          } else {
+            document.getElementById('resultCentroNombre').textContent = 'No disponible';
+            document.getElementById('resultCentroDireccion').textContent = 'No disponible';
+            document.getElementById('resultCentroCodigo').textContent = 'No disponible';
+          }
+          
+          // Información de ubicación
+          if (data.ubicacion) {
+            document.getElementById('resultEstado').textContent = data.ubicacion.estado || 'No disponible';
+            document.getElementById('resultMunicipio').textContent = data.ubicacion.municipio || 'No disponible';
+            document.getElementById('resultParroquia').textContent = data.ubicacion.parroquia || 'No disponible';
+          } else {
+            document.getElementById('resultEstado').textContent = 'No disponible';
+            document.getElementById('resultMunicipio').textContent = 'No disponible';
+            document.getElementById('resultParroquia').textContent = 'No disponible';
+          }
+          
+          // Mostrar el resultado
+          document.getElementById('resultContainer').style.display = 'block';
+        })
+        .catch(error => {
+          // Ocultar loader y mostrar error
+          document.getElementById('loader').style.display = 'none';
+          showError(error.message);
+        });
+    });
+    
+    function showError(message) {
+      const errorElement = document.getElementById('error');
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+    }
+  </script>
+</body>
+</html> 
